@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id Int @id @default(autoincrement())
+
+  name String
+
+  email String @unique
+
+  password String
+
+  circleMembers CircleMember[]
+
+  circlesCreated Circle[]
+
+  groupMembers GroupMember[]
+
+  groupsCreated Group[] @relation("UserCreatedGroups")
+
+  expensesCreated Expense[] @relation("UserCreatedExpenses")
+
+  splits Split[]
+
+  contributions Contribution[]
+
+  balancesAsUser1 Balance[] @relation("User1")
+
+  balancesAsUser2 Balance[] @relation("User2")
+}
+
+model Circle {
+  id Int @id @default(autoincrement())
+
+  title String
+
+  createdById Int
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  members CircleMember[]
+}
+
+model CircleMember {
+  circleId Int
+
+  userId Int
+
+  circle Circle @relation(fields: [circleId], references: [id])
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@id([circleId, userId])
+}
+
+model Group {
+  id Int @id @default(autoincrement())
+
+  title String
+
+  description String?
+
+  createdById Int
+
+  createdBy User @relation("UserCreatedGroups", fields: [createdById], references: [id])
+
+  members GroupMember[]
+
+  expenses Expense[]
+
+  balances Balance[]
+}
+
+model GroupMember {
+  groupId Int
+
+  userId Int
+
+  group Group @relation(fields: [groupId], references: [id])
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@id([groupId, userId])
+}
+
+model Expense {
+  id Int @id @default(autoincrement())
+
+  title String
+
+  description String?
+
+  amount Decimal @db.Decimal(10, 2)
+
+  groupId Int
+
+  createdById Int
+
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id])
+
+  createdBy User @relation("UserCreatedExpenses", fields: [createdById], references: [id])
+
+  splits Split[]
+
+  contributions Contribution[]
+}
+
+model Split {
+  id Int @id @default(autoincrement())
+
+  amount Decimal @db.Decimal(10, 2)
+
+  userId Int
+
+  expenseId Int
+
+  user User @relation(fields: [userId], references: [id])
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+}
+
+model Contribution {
+  id Int @id @default(autoincrement())
+
+  amount Decimal @db.Decimal(10, 2)
+
+  userId Int
+
+  expenseId Int
+
+  user User @relation(fields: [userId], references: [id])
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+}
+
+model Balance {
+  id Int @id @default(autoincrement())
+
+  amount Decimal @db.Decimal(10, 2)
+
+  user1Id Int
+
+  user2Id Int
+
+  groupId Int
+
+  user1 User @relation("User1", fields: [user1Id], references: [id])
+
+  user2 User @relation("User2", fields: [user2Id], references: [id])
+
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@unique([user1Id, user2Id, groupId])
+}
